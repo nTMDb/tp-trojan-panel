@@ -101,9 +101,9 @@ func UpdateNodeById(c *gin.Context) {
 }
 
 func NodeQRCode(c *gin.Context) {
-	var requiredIdDto dto.RequiredIdDto
-	_ = c.ShouldBindJSON(&requiredIdDto)
-	if err := validate.Struct(&requiredIdDto); err != nil {
+	var nodeUrlDto dto.NodeUrlDto
+	_ = c.ShouldBindJSON(&nodeUrlDto)
+	if err := validate.Struct(&nodeUrlDto); err != nil {
 		vo.Fail(constant.ValidateFailed, c)
 		return
 	}
@@ -112,7 +112,7 @@ func NodeQRCode(c *gin.Context) {
 		vo.Fail(err.Error(), c)
 		return
 	}
-	qrCode, err := service.NodeQRCode(&accountInfo.Id, &accountInfo.Username, requiredIdDto.Id)
+	qrCode, err := service.NodeQRCode(&accountInfo.Id, &accountInfo.Username, nodeUrlDto.Id, nodeUrlDto.ClientType)
 	if err != nil {
 		vo.Fail(err.Error(), c)
 		return
@@ -121,9 +121,9 @@ func NodeQRCode(c *gin.Context) {
 }
 
 func NodeURL(c *gin.Context) {
-	var requiredIdDto dto.RequiredIdDto
-	_ = c.ShouldBindJSON(&requiredIdDto)
-	if err := validate.Struct(&requiredIdDto); err != nil {
+	var nodeUrlDto dto.NodeUrlDto
+	_ = c.ShouldBindJSON(&nodeUrlDto)
+	if err := validate.Struct(&nodeUrlDto); err != nil {
 		vo.Fail(constant.ValidateFailed, c)
 		fmt.Println(err.Error())
 		return
@@ -133,7 +133,7 @@ func NodeURL(c *gin.Context) {
 		vo.Fail(err.Error(), c)
 		return
 	}
-	url, _, err := service.NodeURL(&accountInfo.Id, &accountInfo.Username, requiredIdDto.Id)
+	url, _, err := service.NodeURL(&accountInfo.Id, &accountInfo.Username, nodeUrlDto.Id, nodeUrlDto.ClientType)
 	if err != nil {
 		vo.Fail(err.Error(), c)
 		return

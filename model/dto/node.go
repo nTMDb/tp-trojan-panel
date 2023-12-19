@@ -95,3 +95,8 @@ type NodeUpdateDto struct {
 	Hysteria2ServerName   *string `json:"hysteria2ServerName" form:"hysteria2ServerName" validate:"omitempty,min=0,max=64"`
 	Hysteria2Insecure     *uint   `json:"hysteria2Insecure" form:"hysteria2Insecure" validate:"omitempty,oneof=0 1"`
 }
+
+type NodeUrlDto struct {
+	Id         *uint   `json:"id" form:"id" validate:"required"`
+	ClientType *string `json:"clientType" form:"clientType" validate:"required"`
+}
