@@ -179,9 +179,170 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 }
 
 func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, password string) (string, error) {
-	return "", nil
+	var headBuilder strings.Builder
+	if *nodeType.Id == constant.Xray {
+		nodeXray, err := dao.SelectNodeXrayById(node.NodeSubId)
+		if err != nil {
+			return "", errors.New(constant.NodeURLError)
+		}
+		streamSettings := bo.StreamSettings{}
+		if nodeXray.StreamSettings != nil && *nodeXray.StreamSettings != "" {
+			if err := json.Unmarshal([]byte(*nodeXray.StreamSettings), &streamSettings); err != nil {
+				return "", errors.New(constant.NodeURLError)
+			}
+		}
+		settings := bo.Settings{}
+		if nodeXray.Settings != nil && *nodeXray.Settings != "" {
+			if err := json.Unmarshal([]byte(*nodeXray.Settings), &settings); err != nil {
+				return "", errors.New(constant.NodeURLError)
+			}
+		}
+
+		connectPass := password
+
+		if *nodeXray.Protocol == "vless" || *nodeXray.Protocol == "trojan" {
+			if *nodeXray.Protocol == "vless" || *nodeXray.Protocol == "vmess" {
+				connectPass = util.GenerateUUID(password)
+			}
+			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s", *nodeXray.Protocol,
+				url.PathEscape(connectPass), *node.Domain, *node.Port,
+				streamSettings.Network, streamSettings.Security))
+
+			headBuilder.WriteString(fmt.Sprintf("&flow=%s", *nodeXray.XrayFlow))
+
+			if streamSettings.Security == "tls" {
+				headBuilder.WriteString(fmt.Sprintf("&sni=%s", streamSettings.TlsSettings.ServerName))
+				headBuilder.WriteString(fmt.Sprintf("&fp=%s", streamSettings.TlsSettings.Fingerprint))
+				if len(streamSettings.TlsSettings.Alpn) > 0 {
+					alpns := strings.Replace(strings.Trim(fmt.Sprint(streamSettings.TlsSettings.Alpn), "[]"), " ", ",", -1)
+					headBuilder.WriteString(fmt.Sprintf("&alpn=%s", url.PathEscape(alpns)))
+				}
+			} else if streamSettings.Security == "reality" {
+				headBuilder.WriteString(fmt.Sprintf("&pbk=%s", *nodeXray.RealityPbk))
+				headBuilder.WriteString(fmt.Sprintf("&fp=%s", streamSettings.RealitySettings.Fingerprint))
+				if streamSettings.RealitySettings.SpiderX != "" {
+					headBuilder.WriteString(fmt.Sprintf("&spx=%s", url.PathEscape(streamSettings.RealitySettings.SpiderX)))
+				}
+				shortIds := streamSettings.RealitySettings.ShortIds
+				if len(shortIds) != 0 {
+					headBuilder.WriteString(fmt.Sprintf("&sid=%s", shortIds[0]))
+				}
+				serverNames := streamSettings.RealitySettings.ServerNames
+				if len(serverNames) != 0 {
+					headBuilder.WriteString(fmt.Sprintf("&sni=%s", serverNames[0]))
+				}
+			}
+
+			if streamSettings.Network == "ws" {
+				if streamSettings.WsSettings.Path != "" {
+					headBuilder.WriteString(fmt.Sprintf("&path=%s", streamSettings.WsSettings.Path))
+				}
+				if streamSettings.WsSettings.Headers.Host != "" {
+					headBuilder.WriteString(fmt.Sprintf("&host=%s", streamSettings.WsSettings.Headers.Host))
+				}
+			}
+			if node.Name != nil && *node.Name != "" {
+				headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
+			}
+		} else if *nodeXray.Protocol == "vmess" {
+			connectPass = util.GenerateUUID(password)
+
+			var v2rayNVmess bo.V2rayNVmess
+			v2rayNVmess.V = "2"
+			v2rayNVmess.Port = fmt.Sprintf("%d", *node.Port)
+			v2rayNVmess.Add = *node.Domain
+			v2rayNVmess.Id = connectPass
+			v2rayNVmess.Aid = "0"
+			v2rayNVmess.Scy = "none"
+
+			if streamSettings.Security == "tls" {
+				v2rayNVmess.Tls = "tls"
+				v2rayNVmess.Sni = streamSettings.TlsSettings.ServerName
+				v2rayNVmess.Fp = streamSettings.TlsSettings.Fingerprint
+				if len(streamSettings.TlsSettings.Alpn) > 0 {
+					alpns := strings.Replace(strings.Trim(fmt.Sprint(streamSettings.TlsSettings.Alpn), "[]"), " ", ",", -1)
+					v2rayNVmess.Alpn = url.PathEscape(alpns)
+				}
+			}
+
+			if streamSettings.Network == "ws" {
+				v2rayNVmess.Net = "ws"
+				v2rayNVmess.Type = "none"
+				if streamSettings.WsSettings.Path != "" {
+					v2rayNVmess.Path = streamSettings.WsSettings.Path
+				}
+				if streamSettings.WsSettings.Headers.Host != "" {
+					v2rayNVmess.Host = streamSettings.WsSettings.Headers.Host
+				}
+			}
+			if node.Name != nil && *node.Name != "" {
+				v2rayNVmess.Ps = *node.Name
+			}
+			v2rayNVmessStr, err := json.Marshal(v2rayNVmess)
+			if err != nil {
+				return "", errors.New(constant.NodeURLError)
+			}
+			headBuilder.WriteString(base64.StdEncoding.EncodeToString(v2rayNVmessStr))
+		} else if *nodeXray.Protocol == "shadowsocks" {
+			headBuilder.WriteString(fmt.Sprintf("ss://%s@%s:%d",
+				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", *nodeXray.XraySSMethod, connectPass))),
+				*node.Domain, *node.Port))
+			if node.Name != nil && *node.Name != "" {
+				headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
+			}
+		} else if *nodeXray.Protocol == "socks" {
+			settings := bo.Settings{}
+			if nodeXray.Settings != nil && *nodeXray.Settings != "" {
+				if err := json.Unmarshal([]byte(*nodeXray.Settings), &settings); err != nil {
+					return "", errors.New(constant.NodeURLError)
+				}
+			}
+			headBuilder.WriteString(fmt.Sprintf("socks://%s@%s:%d",
+				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", settings.Accounts[0].User, settings.Accounts[0].Pass))),
+				*node.Domain, *node.Port))
+
+			if node.Name != nil && *node.Name != "" {
+				headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
+			}
+		}
+	} else if *nodeType.Id == constant.TrojanGo {
+		if node.Name != nil && *node.Name != "" {
+			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
+		}
+	} else if *nodeType.Id == constant.Hysteria {
+		if node.Name != nil && *node.Name != "" {
+			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
+		}
+	} else if *nodeType.Id == constant.Hysteria2 {
+		nodeHysteria2, err := dao.SelectNodeHysteria2ById(node.NodeSubId)
+		if err != nil {
+			return "", errors.New(constant.NodeURLError)
+		}
+		headBuilder.WriteString(fmt.Sprintf("hysteria2://%s@%s:%d?insecure=%d",
+			password,
+			*node.Domain,
+			*node.Port,
+			*nodeHysteria2.Insecure))
+		if nodeHysteria2.ObfsPassword != nil && *nodeHysteria2.ObfsPassword != "" {
+			headBuilder.WriteString(fmt.Sprintf("&obfs=salamander&obfs-password=%s", *nodeHysteria2.ObfsPassword))
+		}
+		if nodeHysteria2.ServerName != nil && *nodeHysteria2.ServerName != "" {
+			headBuilder.WriteString(fmt.Sprintf("&sni=%s", *nodeHysteria2.ServerName))
+		}
+		if node.Name != nil && *node.Name != "" {
+			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
+		}
+	} else if *nodeType.Id == constant.NaiveProxy {
+		headBuilder.WriteString(fmt.Sprintf("naive+https://%s:%s@%s:%d", username, password, *node.Domain, *node.Port))
+		if node.Name != nil && *node.Name != "" {
+			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
+		}
+	}
+	return headBuilder.String(), nil
 }
 
 func NodeURLNekoRay(node *model.Node, nodeType *model.NodeType, username string, password string) (string, error) {
-	return "", nil
+	var headBuilder strings.Builder
+
+	return headBuilder.String(), nil
 }
