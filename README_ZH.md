@@ -6,7 +6,7 @@
 
 ## 编译
 
-[compile.bat](./compile.bat)
+[compile.bat](compile.bat)
 
 ## 电报
 

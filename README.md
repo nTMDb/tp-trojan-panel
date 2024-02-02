@@ -6,7 +6,7 @@ Trojan Panel Backend
 
 ## Compile
 
-[compile.bat](./compile.bat)
+[compile.bat](compile.bat)
 
 ## Telegram
 
