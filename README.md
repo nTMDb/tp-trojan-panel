@@ -1,6 +1,6 @@
 [中文](README_ZH.md)
 
-# Trojan Panel
+# Trojan Panel Backend
 
 Trojan Panel Backend
 
@@ -12,7 +12,7 @@ Trojan Panel Backend
 
 Telegram Channel: https://t.me/TrojanPanel
 
-## Support
+## Thanks
 
 - [trojan](https://github.com/trojan-gfw/trojan)
 - [trojan-go](https://github.com/p4gefau1t/trojan-go)
