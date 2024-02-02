@@ -1,18 +1,18 @@
-[中文](README_ZH.md)
+[English](README.md)
 
-# Trojan Panel
+# 木马面板
 
-Trojan Panel Backend
+木马面板后端
 
-## Compile
+## 编译
 
 [compile.bat](./compile.bat)
 
-## Telegram
+## 电报
 
 Telegram Channel: https://t.me/TrojanPanel
 
-## Support
+## 致谢
 
 - [trojan](https://github.com/trojan-gfw/trojan)
 - [trojan-go](https://github.com/p4gefau1t/trojan-go)
