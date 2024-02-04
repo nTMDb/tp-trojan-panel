@@ -1,6 +1,6 @@
 module trojan-panel
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Blank-Xu/sql-adapter v0.0.0-20210714092925-0bdd0d548758
