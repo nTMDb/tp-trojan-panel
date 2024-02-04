@@ -687,8 +687,6 @@ func NodeURL(accountId *uint, username *string, id *uint, clientType *string) (s
 		nodeURL, err = NodeURLShadowrocket(node, nodeType, *username, password)
 	} else if *clientType == constant.V2rayN {
 		nodeURL, err = NodeURLV2rayN(node, nodeType, *username, password)
-	} else if *clientType == constant.NekoRay {
-		nodeURL, err = NodeURLNekoRay(node, nodeType, *username, password)
 	}
 	if err != nil {
 		return "", 0, errors.New(constant.NodeURLError)

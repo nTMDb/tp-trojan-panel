@@ -316,10 +316,3 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 	}
 	return headBuilder.String(), nil
 }
-
-// NodeURLNekoRay NekoRay分享链接
-func NodeURLNekoRay(node *model.Node, nodeType *model.NodeType, username string, password string) (string, error) {
-	var headBuilder strings.Builder
-
-	return headBuilder.String(), nil
-}
