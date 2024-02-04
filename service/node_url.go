@@ -39,21 +39,26 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 
 		connectPass := password
 
-		if *nodeXray.Protocol == constant.ProtocolVless || *nodeXray.Protocol == constant.ProtocolVmess || *nodeXray.Protocol == constant.ProtocolTrojan {
+		if *nodeXray.Protocol == constant.ProtocolVless ||
+			*nodeXray.Protocol == constant.ProtocolVmess ||
+			*nodeXray.Protocol == constant.ProtocolTrojan {
 			if *nodeXray.Protocol == constant.ProtocolVless || *nodeXray.Protocol == constant.ProtocolVmess {
 				connectPass = util.GenerateUUID(password)
 			}
-			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s", *nodeXray.Protocol,
-				url.PathEscape(connectPass), *node.Domain, *node.Port,
-				streamSettings.Network, streamSettings.Security))
+			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s",
+				*nodeXray.Protocol,
+				url.PathEscape(connectPass),
+				*node.Domain,
+				*node.Port,
+				streamSettings.Network,
+				streamSettings.Security))
 			if *nodeXray.Protocol == constant.ProtocolVmess {
 				headBuilder.WriteString("&alterId=0")
 				if settings.Encryption == "none" {
 					headBuilder.WriteString("&encryption=none")
 				}
 			}
-
-			if *nodeXray.Protocol == constant.ProtocolVless {
+			if nodeXray.Protocol != nil && *nodeXray.Protocol != "" {
 				headBuilder.WriteString(fmt.Sprintf("&flow=%s", *nodeXray.XrayFlow))
 			}
 
@@ -89,8 +94,9 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 				}
 			}
 		} else if *nodeXray.Protocol == constant.ProtocolShadowsocks {
-			headBuilder.WriteString(fmt.Sprintf("ss://%s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s@%s:%d", *nodeXray.XraySSMethod,
-				connectPass, *node.Domain, *node.Port)))))
+			headBuilder.WriteString(fmt.Sprintf("ss://%s",
+				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s@%s:%d", *nodeXray.XraySSMethod,
+					connectPass, *node.Domain, *node.Port)))))
 		} else if *nodeXray.Protocol == constant.ProtocolSocks {
 			settings := bo.Settings{}
 			if nodeXray.Settings != nil && *nodeXray.Settings != "" {
@@ -98,8 +104,9 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 					return "", errors.New(constant.NodeURLError)
 				}
 			}
-			headBuilder.WriteString(fmt.Sprintf("socks://%s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s@%s:%d", settings.Accounts[0].User,
-				settings.Accounts[0].Pass, *node.Domain, *node.Port)))))
+			headBuilder.WriteString(fmt.Sprintf("socks://%s",
+				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s@%s:%d", settings.Accounts[0].User,
+					settings.Accounts[0].Pass, *node.Domain, *node.Port)))))
 		}
 	} else if *nodeType.Id == constant.TrojanGo {
 		nodeTrojanGo, err := dao.SelectNodeTrojanGoById(node.NodeSubId)
@@ -108,6 +115,7 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 		}
 		headBuilder.WriteString(fmt.Sprintf("trojan-go://%s@%s:%d?", url.PathEscape(password),
 			*node.Domain, *node.Port))
+
 		var sni string
 		if nodeTrojanGo.Sni != nil && *nodeTrojanGo.Sni != "" {
 			sni = *nodeTrojanGo.Sni
@@ -115,6 +123,7 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 			sni = *node.Domain
 		}
 		headBuilder.WriteString(fmt.Sprintf("sni=%s", url.PathEscape(sni)))
+
 		if nodeTrojanGo.WebsocketEnable != nil && *nodeTrojanGo.WebsocketEnable != 0 &&
 			nodeTrojanGo.WebsocketPath != nil && *nodeTrojanGo.WebsocketPath != "" {
 			headBuilder.WriteString(fmt.Sprintf("&type=%s", url.PathEscape("ws")))
@@ -170,7 +179,11 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 			headBuilder.WriteString(fmt.Sprintf("&sni=%s", *nodeHysteria2.ServerName))
 		}
 	} else if *nodeType.Id == constant.NaiveProxy {
-		headBuilder.WriteString(fmt.Sprintf("naive+https://%s:%s@%s:%d", username, password, *node.Domain, *node.Port))
+		headBuilder.WriteString(fmt.Sprintf("naive+https://%s:%s@%s:%d",
+			username,
+			password,
+			*node.Domain,
+			*node.Port))
 	}
 
 	if node.Name != nil && *node.Name != "" {
@@ -202,13 +215,23 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 
 		connectPass := password
 
-		if *nodeXray.Protocol == constant.ProtocolVless || *nodeXray.Protocol == constant.ProtocolTrojan {
+		if *nodeXray.Protocol == constant.ProtocolVless ||
+			*nodeXray.Protocol == constant.ProtocolTrojan {
 			if *nodeXray.Protocol == constant.ProtocolVless {
 				connectPass = util.GenerateUUID(password)
 			}
-			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s&flow=%s", *nodeXray.Protocol,
-				url.PathEscape(connectPass), *node.Domain, *node.Port,
-				streamSettings.Network, streamSettings.Security, *nodeXray.XrayFlow))
+
+			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s",
+				*nodeXray.Protocol,
+				url.PathEscape(connectPass),
+				*node.Domain,
+				*node.Port,
+				streamSettings.Network,
+				streamSettings.Security))
+
+			if nodeXray.Protocol != nil && *nodeXray.Protocol != "" {
+				headBuilder.WriteString(fmt.Sprintf("&flow=%s", *nodeXray.XrayFlow))
+			}
 
 			if streamSettings.Security == "tls" {
 				headBuilder.WriteString(fmt.Sprintf("&sni=%s", streamSettings.TlsSettings.ServerName))
@@ -298,8 +321,11 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 				}
 			}
 			headBuilder.WriteString(fmt.Sprintf("socks://%s@%s:%d",
-				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", settings.Accounts[0].User, settings.Accounts[0].Pass))),
-				*node.Domain, *node.Port))
+				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
+					settings.Accounts[0].User,
+					settings.Accounts[0].Pass))),
+				*node.Domain,
+				*node.Port))
 
 			if node.Name != nil && *node.Name != "" {
 				headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
