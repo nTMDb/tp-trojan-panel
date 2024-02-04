@@ -682,6 +682,7 @@ func NodeURL(accountId *uint, username *string, id *uint, clientType *string) (s
 		return "", 0, errors.New(constant.NodeURLError)
 	}
 	var nodeURL string
+	// 默认使用Shadowrocket分享链接
 	if clientType == nil || *clientType == "" || *clientType == constant.Shadowrocket {
 		nodeURL, err = NodeURLShadowrocket(node, nodeType, *username, password)
 	} else if *clientType == constant.V2rayN {

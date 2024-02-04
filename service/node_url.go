@@ -14,6 +14,7 @@ import (
 	"trojan-panel/util"
 )
 
+// NodeURLShadowrocket Shadowrocket分享链接
 func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username string, password string) (string, error) {
 	// 构建URL
 	var headBuilder strings.Builder
@@ -38,21 +39,21 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 
 		connectPass := password
 
-		if *nodeXray.Protocol == "vless" || *nodeXray.Protocol == "vmess" || *nodeXray.Protocol == "trojan" {
-			if *nodeXray.Protocol == "vless" || *nodeXray.Protocol == "vmess" {
+		if *nodeXray.Protocol == constant.ProtocolVless || *nodeXray.Protocol == constant.ProtocolVmess || *nodeXray.Protocol == constant.ProtocolTrojan {
+			if *nodeXray.Protocol == constant.ProtocolVless || *nodeXray.Protocol == constant.ProtocolVmess {
 				connectPass = util.GenerateUUID(password)
 			}
 			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s", *nodeXray.Protocol,
 				url.PathEscape(connectPass), *node.Domain, *node.Port,
 				streamSettings.Network, streamSettings.Security))
-			if *nodeXray.Protocol == "vmess" {
+			if *nodeXray.Protocol == constant.ProtocolVmess {
 				headBuilder.WriteString("&alterId=0")
 				if settings.Encryption == "none" {
 					headBuilder.WriteString("&encryption=none")
 				}
 			}
 
-			if *nodeXray.Protocol == "vless" {
+			if *nodeXray.Protocol == constant.ProtocolVless {
 				headBuilder.WriteString(fmt.Sprintf("&flow=%s", *nodeXray.XrayFlow))
 			}
 
@@ -87,10 +88,10 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 					headBuilder.WriteString(fmt.Sprintf("&host=%s", streamSettings.WsSettings.Headers.Host))
 				}
 			}
-		} else if *nodeXray.Protocol == "shadowsocks" {
+		} else if *nodeXray.Protocol == constant.ProtocolShadowsocks {
 			headBuilder.WriteString(fmt.Sprintf("ss://%s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s@%s:%d", *nodeXray.XraySSMethod,
 				connectPass, *node.Domain, *node.Port)))))
-		} else if *nodeXray.Protocol == "socks" {
+		} else if *nodeXray.Protocol == constant.ProtocolSocks {
 			settings := bo.Settings{}
 			if nodeXray.Settings != nil && *nodeXray.Settings != "" {
 				if err := json.Unmarshal([]byte(*nodeXray.Settings), &settings); err != nil {
@@ -178,6 +179,7 @@ func NodeURLShadowrocket(node *model.Node, nodeType *model.NodeType, username st
 	return headBuilder.String(), nil
 }
 
+// NodeURLV2rayN V2rayN分享链接
 func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, password string) (string, error) {
 	var headBuilder strings.Builder
 	if *nodeType.Id == constant.Xray {
@@ -341,6 +343,7 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 	return headBuilder.String(), nil
 }
 
+// NodeURLNekoRay NekoRay分享链接
 func NodeURLNekoRay(node *model.Node, nodeType *model.NodeType, username string, password string) (string, error) {
 	var headBuilder strings.Builder
 
