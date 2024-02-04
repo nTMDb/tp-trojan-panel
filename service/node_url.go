@@ -202,15 +202,13 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 
 		connectPass := password
 
-		if *nodeXray.Protocol == "vless" || *nodeXray.Protocol == "trojan" {
-			if *nodeXray.Protocol == "vless" || *nodeXray.Protocol == "vmess" {
+		if *nodeXray.Protocol == constant.ProtocolVless || *nodeXray.Protocol == constant.ProtocolTrojan {
+			if *nodeXray.Protocol == constant.ProtocolVless {
 				connectPass = util.GenerateUUID(password)
 			}
-			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s", *nodeXray.Protocol,
+			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s&flow=%s", *nodeXray.Protocol,
 				url.PathEscape(connectPass), *node.Domain, *node.Port,
-				streamSettings.Network, streamSettings.Security))
-
-			headBuilder.WriteString(fmt.Sprintf("&flow=%s", *nodeXray.XrayFlow))
+				streamSettings.Network, streamSettings.Security, *nodeXray.XrayFlow))
 
 			if streamSettings.Security == "tls" {
 				headBuilder.WriteString(fmt.Sprintf("&sni=%s", streamSettings.TlsSettings.ServerName))
@@ -246,7 +244,7 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 			if node.Name != nil && *node.Name != "" {
 				headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
 			}
-		} else if *nodeXray.Protocol == "vmess" {
+		} else if *nodeXray.Protocol == constant.ProtocolVmess {
 			connectPass = util.GenerateUUID(password)
 
 			var v2rayNVmess bo.V2rayNVmess
@@ -285,14 +283,14 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 				return "", errors.New(constant.NodeURLError)
 			}
 			headBuilder.WriteString(base64.StdEncoding.EncodeToString(v2rayNVmessStr))
-		} else if *nodeXray.Protocol == "shadowsocks" {
+		} else if *nodeXray.Protocol == constant.ProtocolShadowsocks {
 			headBuilder.WriteString(fmt.Sprintf("ss://%s@%s:%d",
 				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", *nodeXray.XraySSMethod, connectPass))),
 				*node.Domain, *node.Port))
 			if node.Name != nil && *node.Name != "" {
 				headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
 			}
-		} else if *nodeXray.Protocol == "socks" {
+		} else if *nodeXray.Protocol == constant.ProtocolSocks {
 			settings := bo.Settings{}
 			if nodeXray.Settings != nil && *nodeXray.Settings != "" {
 				if err := json.Unmarshal([]byte(*nodeXray.Settings), &settings); err != nil {
@@ -308,37 +306,13 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 			}
 		}
 	} else if *nodeType.Id == constant.TrojanGo {
-		if node.Name != nil && *node.Name != "" {
-			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
-		}
+
 	} else if *nodeType.Id == constant.Hysteria {
-		if node.Name != nil && *node.Name != "" {
-			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
-		}
+
 	} else if *nodeType.Id == constant.Hysteria2 {
-		nodeHysteria2, err := dao.SelectNodeHysteria2ById(node.NodeSubId)
-		if err != nil {
-			return "", errors.New(constant.NodeURLError)
-		}
-		headBuilder.WriteString(fmt.Sprintf("hysteria2://%s@%s:%d?insecure=%d",
-			password,
-			*node.Domain,
-			*node.Port,
-			*nodeHysteria2.Insecure))
-		if nodeHysteria2.ObfsPassword != nil && *nodeHysteria2.ObfsPassword != "" {
-			headBuilder.WriteString(fmt.Sprintf("&obfs=salamander&obfs-password=%s", *nodeHysteria2.ObfsPassword))
-		}
-		if nodeHysteria2.ServerName != nil && *nodeHysteria2.ServerName != "" {
-			headBuilder.WriteString(fmt.Sprintf("&sni=%s", *nodeHysteria2.ServerName))
-		}
-		if node.Name != nil && *node.Name != "" {
-			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
-		}
+
 	} else if *nodeType.Id == constant.NaiveProxy {
-		headBuilder.WriteString(fmt.Sprintf("naive+https://%s:%s@%s:%d", username, password, *node.Domain, *node.Port))
-		if node.Name != nil && *node.Name != "" {
-			headBuilder.WriteString(fmt.Sprintf("#%s", url.PathEscape(*node.Name)))
-		}
+
 	}
 	return headBuilder.String(), nil
 }
