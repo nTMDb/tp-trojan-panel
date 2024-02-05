@@ -1,7 +1,6 @@
 package constant
 
 const (
-	Shadowrocket = "shadowrocket"
-	V2rayN       = "v2rayn"
-	NekoRay      = "nekoray"
+	Shadowrocket = "Shadowrocket"
+	V2rayN       = "v2rayN"
 )
