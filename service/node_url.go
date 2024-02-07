@@ -221,8 +221,7 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 				connectPass = util.GenerateUUID(password)
 			}
 
-			headBuilder.WriteString(fmt.Sprintf("%s://%s@%s:%d?type=%s&security=%s",
-				*nodeXray.Protocol,
+			headBuilder.WriteString(fmt.Sprintf("vless://%s@%s:%d?type=%s&security=%s",
 				url.PathEscape(connectPass),
 				*node.Domain,
 				*node.Port,
@@ -284,7 +283,7 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 				v2rayNVmess.Fp = streamSettings.TlsSettings.Fingerprint
 				if len(streamSettings.TlsSettings.Alpn) > 0 {
 					alpns := strings.Replace(strings.Trim(fmt.Sprint(streamSettings.TlsSettings.Alpn), "[]"), " ", ",", -1)
-					v2rayNVmess.Alpn = url.PathEscape(alpns)
+					v2rayNVmess.Alpn = alpns
 				}
 			}
 
@@ -305,7 +304,7 @@ func NodeURLV2rayN(node *model.Node, nodeType *model.NodeType, username string, 
 			if err != nil {
 				return "", errors.New(constant.NodeURLError)
 			}
-			headBuilder.WriteString(base64.StdEncoding.EncodeToString(v2rayNVmessStr))
+			headBuilder.WriteString(fmt.Sprintf("vmess://%s", base64.StdEncoding.EncodeToString(v2rayNVmessStr)))
 		} else if *nodeXray.Protocol == constant.ProtocolShadowsocks {
 			headBuilder.WriteString(fmt.Sprintf("ss://%s@%s:%d",
 				base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", *nodeXray.XraySSMethod, connectPass))),
